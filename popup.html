@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>데일리 인증</title>
+  <title>데일리 인증 도우미</title>
   <style>
     :root {
       --naver-green: #03C75A;
@@ -21,12 +21,12 @@
       --saturday-color: #1971c2;
     }
     @keyframes flash {
-      0%, 100% { 
+      0%, 100% {
         transform: scale(1);
         background-color: var(--calendar-auth-bg);
         box-shadow: 0 4px 8px rgba(3, 199, 90, 0.3);
       }
-      50% { 
+      50% {
         transform: scale(1.15);
         background-color: #20c997;
         box-shadow: 0 6px 14px rgba(3, 199, 90, 0.4);
@@ -34,7 +34,7 @@
     }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      width: 340px;
+      width: 368px;
       padding: 0;
       margin: 0;
       background-color: var(--background-color);
@@ -66,18 +66,44 @@
       font-size: 14px;
       color: var(--label-color);
     }
-    input[type="text"], input[type="number"] {
+    input[type="text"], input[type="number"], textarea {
       width: calc(100% - 24px);
       padding: 11px;
       border: 1px solid var(--border-color);
       border-radius: 8px;
       font-size: 14px;
+      font-family: inherit; /* 폰트 통일 */
       transition: box-shadow 0.2s, border-color 0.2s;
     }
-    input[type="text"]:focus, input[type="number"]:focus {
+    input[type="text"]:focus, input[type="number"]:focus, textarea:focus {
       outline: none;
       border-color: var(--naver-green);
       box-shadow: 0 0 0 3px rgba(3, 199, 90, 0.2);
+    }
+    textarea {
+        resize: vertical;
+        font-size: 12px;
+        min-height: 100px;
+    }
+    .template-info {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 8px;
+        padding: 8px 10px;
+        background-color: #f1f3f5;
+        border-radius: 6px;
+        line-height: 1.6;
+    }
+    .template-info p {
+        margin: 0;
+    }
+    .template-info code {
+        background-color: #dee2e6;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+        font-size: 11.5px;
+        color: #c92a2a;
     }
     .save-button {
       display: block;
@@ -219,9 +245,19 @@
       <input type="text" id="nickname-input" placeholder="예시: 취뽀">
     </div>
 
+    <div class="form-group">
+        <label for="template-input">본문 템플릿 (클립보드 복사 내용)</label>
+        <textarea id="template-input" rows="4"></textarea>
+        <div class="template-info">
+            <p><strong>치환자:</strong> 아래 코드를 사용하면 저장된 값으로 자동 변경됩니다.</p>
+            <p>• 인증 횟수: <code>${authCount}</code></p>
+            <p>• 닉네임: <code>${nickname}</code></p>
+        </div>
+    </div>
+
     <button id="save-btn" class="save-button">설정 저장</button>
     <div class="info-text">
-      <p>데일리 인증 글쓰기에서 에디터 본문 클릭 시 활성화 됩니다</p>
+        <p>데일리 인증 글쓰기에서 에디터 본문 클릭 시 활성화 됩니다</p>
     </div>
 
     <div id="status"></div>

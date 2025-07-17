@@ -3,8 +3,8 @@
  * 1. 글쓰기 페이지에서 '데일리 인증' 게시판일 때만 템플릿 불러오기 기능
  * 2. 글 등록 완료 후 인증 완료 모달 표시 기능
  *
- * @version 2.1.0
- * @description - '데일리 인증' 게시판 선택 시에만 템플릿 모달이 활성화되도록 수정
+ * @version 2.2.0
+ * @description - 팝업에서 저장한 본문 템플릿을 불러와 적용하도록 수정
  * - MutationObserver를 사용하여 게시판 변경을 실시간으로 감지
  * - async/await를 사용한 비동기 로직 개선
  * - 코드 구조화 및 가독성 향상
@@ -19,7 +19,7 @@ const SELECTORS = {
   SUBMIT_BUTTON: '.WritingHeader .BaseButton--skinGreen',
   TITLE_TEXTAREA: '.FlexableTextArea .textarea_input',
   BOARD_SELECTOR_CONTAINER: '.FormSelectBox.menu_candidates_selectbox',
-  BOARD_SELECTOR_BUTTON: '.FormSelectBox .button.is_selected',
+  BOARD_SELECTOR_BUTTON: '.FormSelectButton',
 };
 
 /**
@@ -204,7 +204,7 @@ async function handleSubmit(titleTextarea) {
 }
 
 // ===================================================================================
-// UI 관련 함수 (이하 코드는 변경 없음)
+// UI 관련 함수
 // ===================================================================================
 
 /**
@@ -268,9 +268,9 @@ function showTemplateModal(doc, authCount, nickname) {
       }, 300);
   };
 
-  // '불러오기' 버튼 클릭 이벤트
-  loadButton.addEventListener('click', () => {
-    applyTemplate(doc, authCount, nickname);
+  // '불러오기' 버튼 클릭 이벤트 (async/await 적용)
+  loadButton.addEventListener('click', async () => {
+    await applyTemplate(doc, authCount, nickname); // 비동기 함수 호출 대기
     closeModal();
   });
 
@@ -318,13 +318,13 @@ function createModalButton(text, bgColor, textColor) {
 }
 
 /**
- * 제목과 본문에 템플릿을 적용합니다.
+ * 제목과 본문에 템플릿을 적용합니다. (비동기로 변경)
  * @param {Document} doc 
  * @param {number} authCount 
  * @param {string} nickname 
  */
-function applyTemplate(doc, authCount, nickname) {
-  // 1. 제목 템플릿 적용
+async function applyTemplate(doc, authCount, nickname) {
+  // 1. 제목 템플릿 적용 (변경 없음)
   const titleTextarea = doc.querySelector(SELECTORS.TITLE_TEXTAREA);
   if (titleTextarea) {
     const today = new Date();
@@ -335,19 +335,30 @@ function applyTemplate(doc, authCount, nickname) {
     
     const newTitle = `[#${authCount} ${nickname}] 데일리인증 ${formattedDate}`;
     titleTextarea.value = newTitle;
-    // React/Vue 기반의 textarea는 수동으로 input 이벤트를 발생시켜야 상태가 업데이트됩니다.
     titleTextarea.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
-  // 2. 본문 템플릿 클립보드에 복사 및 알림 표시
-  const bodyTemplate = `#${authCount} 번째 [${nickname}] 데일리 인증\n - `;
-  navigator.clipboard.writeText(bodyTemplate).then(() => {
+  // 2. 저장된 본문 템플릿 불러와서 클립보드에 복사
+  // 스토리지에서 사용자가 저장한 템플릿을 가져옵니다.
+  const { bodyTemplate: userTemplate } = await getStorageData(['bodyTemplate']);
+  
+  // 기본 템플릿 문자열을 정의합니다.
+  const defaultTemplate = '#${authCount} 번째 [${nickname}] 데일리 인증\n - ';
+  
+  // 사용자가 저장한 템플릿이 있으면 그것을 사용하고, 없으면 기본 템플릿을 사용합니다.
+  // .replace()를 사용해 플레이스홀더(${authCount}, ${nickname})를 실제 값으로 치환합니다.
+  const finalTemplate = (userTemplate || defaultTemplate)
+    .replace(/\$\{authCount\}/g, authCount)
+    .replace(/\$\{nickname\}/g, nickname);
+
+  // 최종적으로 만들어진 템플릿을 클립보드에 복사하고 알림을 표시합니다.
+  navigator.clipboard.writeText(finalTemplate).then(() => {
     showClipboardNotification(doc, '✅ 본문 템플릿이 복사되었습니다. <strong>Ctrl+V</strong>로 붙여넣으세요!');
   }).catch(err => {
     console.error('클립보드 복사 실패:', err);
     // 대체 수단 (구형 브라우저 호환)
     const tempTextArea = doc.createElement('textarea');
-    tempTextArea.value = bodyTemplate;
+    tempTextArea.value = finalTemplate;
     doc.body.appendChild(tempTextArea);
     tempTextArea.select();
     doc.execCommand('copy');
