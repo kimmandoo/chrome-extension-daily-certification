@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>데일리 인증</title>
+  <style>
+    :root {
+      --naver-green: #03C75A;
+      --hover-green: #02b350;
+      --background-color: #f8f9fa;
+      --text-color: #343a40;
+      --label-color: #495057;
+      --border-color: #dee2e6;
+      --button-text-color: #fff;
+      --status-color: #28a745;
+      --calendar-day-color: #495057;
+      --calendar-today-border: #20c997;
+      --calendar-auth-bg: #03C75A;
+      --calendar-auth-text: #fff;
+      --sunday-color: #e03131;
+      --saturday-color: #1971c2;
+    }
+    @keyframes flash {
+      0%, 100% { 
+        transform: scale(1);
+        background-color: var(--calendar-auth-bg);
+        box-shadow: 0 4px 8px rgba(3, 199, 90, 0.3);
+      }
+      50% { 
+        transform: scale(1.15);
+        background-color: #20c997;
+        box-shadow: 0 6px 14px rgba(3, 199, 90, 0.4);
+      }
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      width: 340px;
+      padding: 0;
+      margin: 0;
+      background-color: var(--background-color);
+      color: var(--text-color);
+    }
+    .header {
+      background: linear-gradient(45deg, var(--naver-green), #20c997);
+      color: var(--button-text-color);
+      padding: 18px;
+      text-align: center;
+      border-radius: 0 0 12px 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    .header h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .container {
+      padding: 24px 20px 20px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--label-color);
+    }
+    input[type="text"], input[type="number"] {
+      width: calc(100% - 24px);
+      padding: 11px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 14px;
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+    input[type="text"]:focus, input[type="number"]:focus {
+      outline: none;
+      border-color: var(--naver-green);
+      box-shadow: 0 0 0 3px rgba(3, 199, 90, 0.2);
+    }
+    .save-button {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      padding: 12px;
+      background-color: var(--naver-green);
+      color: var(--button-text-color);
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .save-button:hover {
+      background-color: var(--hover-green);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    #status {
+      margin-top: 15px;
+      text-align: center;
+      color: var(--status-color);
+      font-weight: 600;
+      height: 18px;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+    }
+    #status.show {
+        opacity: 1;
+    }
+    .calendar-container {
+        padding: 0 20px 20px 20px;
+        border-top: 1px solid #e9ecef;
+        margin-top: 15px;
+        padding-top: 20px;
+    }
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    .calendar-header h3 {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 700;
+        color: #212529;
+    }
+    .calendar-header button {
+        background: none;
+        border: none;
+        font-size: 22px;
+        font-weight: bold;
+        cursor: pointer;
+        padding: 5px 10px;
+        border-radius: 50%;
+        color: #868e96;
+        transition: background-color 0.2s;
+        line-height: 1;
+    }
+    .calendar-header button:hover {
+        background-color: #e9ecef;
+    }
+    #calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 2px;
+        text-align: center;
+    }
+    .calendar-cell {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        font-size: 13px;
+        color: var(--calendar-day-color);
+        transition: all 0.2s ease-in-out;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+    }
+    .calendar-cell.day-header {
+        font-weight: 500;
+        color: #868e96;
+        font-size: 12px;
+        height: auto;
+        margin-bottom: 5px;
+    }
+    .calendar-cell.day-header.sunday { color: var(--sunday-color); }
+    .calendar-cell.day-header.saturday { color: var(--saturday-color); }
+    .calendar-cell.today {
+        font-weight: 700;
+        color: var(--naver-green);
+        border: 1.5px solid var(--calendar-today-border);
+    }
+    .calendar-cell.authenticated {
+        background-color: var(--calendar-auth-bg);
+        color: var(--calendar-auth-text);
+        font-weight: bold;
+        border: 1.5px solid transparent;
+    }
+    .calendar-cell:not(.day-header):not(.authenticated):hover {
+        background-color: #e9ecef;
+    }
+    .calendar-cell.authenticated:hover {
+        background-color: var(--hover-green);
+    }
+    .calendar-cell.newly-authenticated {
+        animation: flash 1.2s ease-in-out;
+    }
+    .info-text {
+      text-align: center;
+      font-size: 13px;
+      color: #6c757d;
+      margin-top: 15px;
+    }
+    .info-text p {
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h2>👽데일리 인증🚀</h2>
+  </div>
+
+  <div class="container">
+    <div class="form-group">
+      <label for="auth-count-input">오늘은 몇 번째 인증인가요?</label>
+      <input type="number" id="auth-count-input" placeholder="숫자만 입력 (예: 1, 2, 3...)">
+    </div>
+
+    <div class="form-group">
+      <label for="nickname-input">인증에 사용할 닉네임</label>
+      <input type="text" id="nickname-input" placeholder="예시: 취뽀">
+    </div>
+
+    <button id="save-btn" class="save-button">설정 저장</button>
+    <div class="info-text">
+      <p>데일리 인증 글쓰기에서 에디터 본문 클릭 시 활성화 됩니다</p>
+    </div>
+
+    <div id="status"></div>
+  </div>
+
+  <div class="calendar-container">
+    <div class="calendar-header">
+        <button id="prev-month">‹</button>
+        <h3 id="month-year"></h3>
+        <button id="next-month">›</button>
+    </div>
+    <div id="calendar-grid"></div>
+  </div>
+
+  <script src="popup.js"></script>
+
+</body>
+</html>
