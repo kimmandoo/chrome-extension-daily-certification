@@ -1,16 +1,20 @@
 /**
  * popup.html의 스크립트 로직
  * 인증 횟수, 닉네임, 본문 템플릿, 달력 기능을 관리합니다.
+ * 추가된 기능: 연속 인증 스트릭 계산 및 표시
  */
 
 document.addEventListener('DOMContentLoaded', () => {
   const countInput = document.getElementById('auth-count-input');
   const nicknameInput = document.getElementById('nickname-input');
-  const templateInput = document.getElementById('template-input'); // 템플릿 textarea 추가
+  const templateInput = document.getElementById('template-input');
   const saveBtn = document.getElementById('save-btn');
   const status = document.getElementById('status');
-  
-  // 스토리지에서 데이터(인증 횟수, 닉네임, 본문 템플릿)를 불러와서 각 입력 필드에 채웁니다.
+
+  // 스트릭 DOM 요소
+  const currentStreakEl = document.getElementById('current-streak');
+  const longestStreakEl = document.getElementById('longest-streak');
+
   chrome.storage.sync.get(['authCount', 'cafeNickname', 'bodyTemplate'], (result) => {
     if (result.authCount) {
       countInput.value = result.authCount;
@@ -18,26 +22,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (result.cafeNickname) {
       nicknameInput.value = result.cafeNickname;
     }
-    // 저장된 본문 템플릿을 불러오거나, 없으면 기본값을 설정합니다.
     if (result.bodyTemplate) {
       templateInput.value = result.bodyTemplate;
     } else {
-      // 기본 템플릿 설정
-      templateInput.value = '#${authCount} 번째 [${nickname}] 데일리 인증\n - ';
+      templateInput.value = '#${authCount} 번째 [${nickname}] 데일리 인증 ${date}\n - ';
     }
   });
 
-  // '설정 저장' 버튼 클릭 이벤트 리스너
   saveBtn.addEventListener('click', () => {
     const authCount = countInput.value;
     const nickname = nicknameInput.value;
-    const bodyTemplate = templateInput.value; // 템플릿 내용 가져오기
+    const bodyTemplate = templateInput.value;
 
-    // 인증 횟수, 닉네임, 본문 템플릿을 스토리지에 저장합니다.
-    chrome.storage.sync.set({ 
-      authCount: authCount, 
+    chrome.storage.sync.set({
+      authCount: authCount,
       cafeNickname: nickname,
-      bodyTemplate: bodyTemplate // 템플릿 저장
+      bodyTemplate: bodyTemplate
     }, () => {
       status.textContent = '✅ 저장이 완료되었습니다!';
       status.classList.add('show');
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // --- 달력 기능 ---
+  // --- 달력 및 스트릭 기능 ---
   const monthYearEl = document.getElementById('month-year');
   const calendarGridEl = document.getElementById('calendar-grid');
   const prevMonthBtn = document.getElementById('prev-month');
@@ -56,18 +56,75 @@ document.addEventListener('DOMContentLoaded', () => {
   
   let currentDate = new Date();
 
+  /**
+   * YYYY-MM-DD 형식의 날짜 문자열을 반환하는 함수
+   * @param {Date} date 
+   * @returns {string}
+   */
+  const toDateString = (date) => {
+    return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+  };
+
+  /**
+   * 인증 날짜 배열을 기반으로 현재/최장 연속 인증을 계산합니다.
+   * @param {string[]} authDates - YYYY-MM-DD 형식의 인증 날짜 배열
+   */
+  const calculateStreaks = (authDates) => {
+    if (!authDates || authDates.length === 0) {
+      return { current: 0, longest: 0 };
+    }
+
+    const dates = [...new Set(authDates)].map(d => new Date(d)).sort((a, b) => a - b);
+    
+    let longestStreak = 0;
+    let currentStreak = 0;
+
+    if (dates.length > 0) {
+        longestStreak = 1;
+        currentStreak = 1;
+    }
+
+    for (let i = 1; i < dates.length; i++) {
+        const diff = (dates[i] - dates[i - 1]) / (1000 * 60 * 60 * 24);
+        if (diff === 1) {
+            currentStreak++;
+        } else {
+            currentStreak = 1;
+        }
+        if (currentStreak > longestStreak) {
+            longestStreak = currentStreak;
+        }
+    }
+    
+    // 현재 스트릭이 유효한지 확인 (마지막 인증이 어제 또는 오늘인지)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const lastAuthDate = dates[dates.length - 1];
+    const diffFromToday = (today - lastAuthDate) / (1000 * 60 * 60 * 24);
+
+    if (diffFromToday > 1) {
+        currentStreak = 0;
+    }
+
+    return { current: currentStreak, longest: longestStreak };
+  };
+
   const renderCalendar = (date) => {
-    // 달력을 그릴 때, 'authDates'와 'lastAuthDate'를 함께 가져옵니다.
     chrome.storage.sync.get(['authDates', 'lastAuthDate'], (data) => {
       const authDates = data.authDates || [];
       const lastAuthDate = data.lastAuthDate;
       const year = date.getFullYear();
       const month = date.getMonth();
 
+      // --- 스트릭 계산 및 표시 ---
+      const streaks = calculateStreaks(authDates);
+      currentStreakEl.textContent = `${streaks.current}일`;
+      longestStreakEl.textContent = `${streaks.longest}일`;
+      // --------------------------
+
       monthYearEl.textContent = `${year}년 ${month + 1}월`;
       calendarGridEl.innerHTML = '';
 
-      // 요일 헤더 추가
       const days = ['일', '월', '화', '수', '목', '금', '토'];
       days.forEach((day, index) => {
         const dayEl = document.createElement('div');
@@ -90,13 +147,11 @@ document.addEventListener('DOMContentLoaded', () => {
         dateCell.className = 'calendar-cell';
         dateCell.textContent = i;
         
-        const today = new Date();
-        const y = date.getFullYear();
-        const m = (date.getMonth() + 1).toString().padStart(2, '0');
-        const d = i.toString().padStart(2, '0');
-        const dateString = `${y}-${m}-${d}`;
+        const cellDate = new Date(year, month, i);
+        const dateString = toDateString(cellDate);
+        const todayString = toDateString(new Date());
 
-        if (today.getFullYear() === y && today.getMonth() === month && today.getDate() === i) {
+        if (dateString === todayString) {
           dateCell.classList.add('today');
         }
 
@@ -104,11 +159,8 @@ document.addEventListener('DOMContentLoaded', () => {
           dateCell.classList.add('authenticated');
         }
         
-        // *** 애니메이션 적용 부분 ***
-        // 마지막 인증 날짜와 일치하면 애니메이션 클래스를 추가합니다.
         if (lastAuthDate === dateString) {
           dateCell.classList.add('newly-authenticated');
-          // 애니메이션은 한 번만 보여주고, 저장된 마지막 인증 날짜를 삭제합니다.
           chrome.storage.sync.remove('lastAuthDate');
         }
 

@@ -326,14 +326,15 @@ function createModalButton(text, bgColor, textColor) {
 async function applyTemplate(doc, authCount, nickname) {
   // 1. 제목 템플릿 적용 (변경 없음)
   const titleTextarea = doc.querySelector(SELECTORS.TITLE_TEXTAREA);
+
+  const today = new Date();
+  const yy = today.getFullYear().toString().slice(-2);
+  const mm = (today.getMonth() + 1).toString().padStart(2, '0');
+  const dd = today.getDate().toString().padStart(2, '0');
+  const date = `${yy}${mm}${dd}`;
+
   if (titleTextarea) {
-    const today = new Date();
-    const yy = today.getFullYear().toString().slice(-2);
-    const mm = (today.getMonth() + 1).toString().padStart(2, '0');
-    const dd = today.getDate().toString().padStart(2, '0');
-    const formattedDate = `${yy}${mm}${dd}`;
-    
-    const newTitle = `[#${authCount} ${nickname}] 데일리인증 ${formattedDate}`;
+    const newTitle = `[#${authCount} ${nickname}] 데일리인증 ${date}`;
     titleTextarea.value = newTitle;
     titleTextarea.dispatchEvent(new Event('input', { bubbles: true }));
   }
@@ -343,12 +344,13 @@ async function applyTemplate(doc, authCount, nickname) {
   const { bodyTemplate: userTemplate } = await getStorageData(['bodyTemplate']);
   
   // 기본 템플릿 문자열을 정의합니다.
-  const defaultTemplate = '#${authCount} 번째 [${nickname}] 데일리 인증\n - ';
+  const defaultTemplate = '#${authCount} 번째 [${nickname}] 데일리 인증 ${date}\n - ';
   
   // 사용자가 저장한 템플릿이 있으면 그것을 사용하고, 없으면 기본 템플릿을 사용합니다.
   // .replace()를 사용해 플레이스홀더(${authCount}, ${nickname})를 실제 값으로 치환합니다.
   const finalTemplate = (userTemplate || defaultTemplate)
     .replace(/\$\{authCount\}/g, authCount)
+    .replace(/\$\{date\}/g, date)
     .replace(/\$\{nickname\}/g, nickname);
 
   // 최종적으로 만들어진 템플릿을 클립보드에 복사하고 알림을 표시합니다.

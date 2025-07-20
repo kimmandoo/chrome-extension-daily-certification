@@ -19,6 +19,7 @@
       --calendar-auth-text: #fff;
       --sunday-color: #e03131;
       --saturday-color: #1971c2;
+      --stat-bg-color: #ffffff;
     }
     @keyframes flash {
       0%, 100% {
@@ -137,10 +138,38 @@
     #status.show {
         opacity: 1;
     }
+    /* --- 추가된 스트릭 스타일 --- */
+    .stats-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      padding: 0 20px;
+      margin-bottom: 20px;
+    }
+    .stat-item {
+      background-color: var(--stat-bg-color);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .stat-item h3 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--label-color);
+      margin: 0 0 8px;
+    }
+    .stat-item p {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--naver-green);
+      margin: 0;
+    }
+    /* --- -------------------- --- */
     .calendar-container {
         padding: 0 20px 20px 20px;
         border-top: 1px solid #e9ecef;
-        margin-top: 15px;
+        margin-top: 20px;
         padding-top: 20px;
     }
     .calendar-header {
@@ -252,6 +281,7 @@
             <p><strong>치환자:</strong> 아래 코드를 사용하면 저장된 값으로 자동 변경됩니다.</p>
             <p>• 인증 횟수: <code>${authCount}</code></p>
             <p>• 닉네임: <code>${nickname}</code></p>
+            <p>• 오늘 날짜: <code>${date}</code></p>
         </div>
     </div>
 
@@ -261,6 +291,17 @@
     </div>
 
     <div id="status"></div>
+  </div>
+
+  <div class="stats-container">
+    <div class="stat-item">
+      <h3>🔥 현재 연속 인증</h3>
+      <p id="current-streak">0일</p>
+    </div>
+    <div class="stat-item">
+      <h3>🏆 최장 연속 인증</h3>
+      <p id="longest-streak">0일</p>
+    </div>
   </div>
 
   <div class="calendar-container">
