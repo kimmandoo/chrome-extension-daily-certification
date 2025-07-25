@@ -3,8 +3,9 @@
  * 1. 글쓰기 페이지에서 '데일리 인증' 게시판일 때만 템플릿 불러오기 기능
  * 2. 글 등록 완료 후 인증 완료 모달 표시 기능
  *
- * @version 2.2.0
- * @description - 팝업에서 저장한 본문 템플릿을 불러와 적용하도록 수정
+ * @version 2.3.0
+ * @description - 인증 시 날짜만이 아닌 전체 타임스탬프(ISO)를 저장하도록 변경
+ * - 팝업에서 저장한 본문 템플릿을 불러와 적용하도록 수정
  * - MutationObserver를 사용하여 게시판 변경을 실시간으로 감지
  * - async/await를 사용한 비동기 로직 개선
  * - 코드 구조화 및 가독성 향상
@@ -185,19 +186,17 @@ async function handleSubmit(titleTextarea) {
     const { authCount = 0, authDates = [] } = await getStorageData(['authCount', 'authDates']);
     
     const newCount = parseInt(authCount, 10) + 1;
+    const submissionTimestamp = new Date().toISOString();
     
-    const today = new Date();
-    const todayString = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
-    
-    // 중복 저장을 방지하기 위해 Set을 사용
+    // 중복 저장을 방지하기 위해 Set을 사용 (실제로는 거의 발생하지 않음)
     const updatedAuthDates = new Set(authDates);
-    updatedAuthDates.add(todayString);
+    updatedAuthDates.add(submissionTimestamp);
 
     // 페이지 이동 후 애니메이션을 보여주기 위한 플래그 설정
     await setStorageData({ 
       authCount: newCount, 
       authDates: Array.from(updatedAuthDates), // 다시 배열로 변환하여 저장
-      lastAuthDate: todayString,
+      lastAuthDate: submissionTimestamp, // 타임스탬프로 저장
       showAuthAnimation: true 
     });
   }

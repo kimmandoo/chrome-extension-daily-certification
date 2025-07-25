@@ -13,6 +13,7 @@
       --border-color: #dee2e6;
       --button-text-color: #fff;
       --status-color: #28a745;
+      --error-color: #e03131;
       --calendar-day-color: #495057;
       --calendar-today-border: #20c997;
       --calendar-auth-bg: #03C75A;
@@ -60,6 +61,10 @@
     .form-group {
       margin-bottom: 20px;
     }
+    .form-group.separated {
+        border-top: 1px solid #e9ecef;
+        padding-top: 20px;
+    }
     label {
       display: block;
       margin-bottom: 8px;
@@ -73,13 +78,17 @@
       border: 1px solid var(--border-color);
       border-radius: 8px;
       font-size: 14px;
-      font-family: inherit; /* 폰트 통일 */
+      font-family: inherit;
       transition: box-shadow 0.2s, border-color 0.2s;
     }
     input[type="text"]:focus, input[type="number"]:focus, textarea:focus {
       outline: none;
       border-color: var(--naver-green);
       box-shadow: 0 0 0 3px rgba(3, 199, 90, 0.2);
+    }
+    input:disabled {
+        background-color: #f1f3f5;
+        cursor: not-allowed;
     }
     textarea {
         resize: vertical;
@@ -120,17 +129,20 @@
       cursor: pointer;
       transition: all 0.2s ease;
     }
-    .save-button:hover {
+    .save-button:hover:not(:disabled) {
       background-color: var(--hover-green);
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
+    .save-button:disabled {
+        background-color: #adb5bd;
+        cursor: not-allowed;
+    }
     #status {
       margin-top: 15px;
       text-align: center;
-      color: var(--status-color);
       font-weight: 600;
-      height: 18px;
+      min-height: 18px;
       font-size: 14px;
       opacity: 0;
       transition: opacity 0.3s ease-in-out;
@@ -138,7 +150,8 @@
     #status.show {
         opacity: 1;
     }
-    /* --- 추가된 스트릭 스타일 --- */
+    #status.success { color: var(--status-color); }
+    #status.error { color: var(--error-color); }
     .stats-container {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -165,7 +178,6 @@
       color: var(--naver-green);
       margin: 0;
     }
-    /* --- -------------------- --- */
     .calendar-container {
         padding: 0 20px 20px 20px;
         border-top: 1px solid #e9ecef;
@@ -275,23 +287,23 @@
     </div>
 
     <div class="form-group">
-        <label for="template-input">본문 템플릿 (클립보드 복사 내용)</label>
-        <textarea id="template-input" rows="4"></textarea>
-        <div class="template-info">
-            <p><strong>치환자:</strong> 아래 코드를 사용하면 저장된 값으로 자동 변경됩니다.</p>
-            <p>• 인증 횟수: <code>${authCount}</code></p>
-            <p>• 닉네임: <code>${nickname}</code></p>
-            <p>• 오늘 날짜: <code>${date}</code></p>
-        </div>
+      <label for="template-input">본문 템플릿 (클립보드 복사 내용)</label>
+      <textarea id="template-input" rows="4"></textarea>
+      <div class="template-info">
+        <p><strong>치환자:</strong> 아래 코드를 사용하면 저장된 값으로 자동 변경됩니다.</p>
+        <p>• 인증 횟수: <code>${authCount}</code></p>
+        <p>• 닉네임: <code>${nickname}</code></p>
+        <p>• 오늘 날짜: <code>${date}</code></p>
+      </div>
     </div>
-
+    
     <button id="save-btn" class="save-button">설정 저장</button>
     <div class="info-text">
-        <p>데일리 인증 글쓰기에서 에디터 본문 클릭 시 활성화 됩니다</p>
+      <p>데일리 인증 글쓰기에서 에디터 본문 클릭 시 활성화 됩니다</p>
     </div>
 
     <div id="status"></div>
-  </div>
+
 
   <div class="stats-container">
     <div class="stat-item">
@@ -306,11 +318,22 @@
 
   <div class="calendar-container">
     <div class="calendar-header">
-        <button id="prev-month">‹</button>
-        <h3 id="month-year"></h3>
-        <button id="next-month">›</button>
+      <button id="prev-month">‹</button>
+      <h3 id="month-year"></h3>
+      <button id="next-month">›</button>
     </div>
     <div id="calendar-grid"></div>
+  </div>
+
+  <div class="form-group separated">
+        <label for="cutoff-hour-input">인증 유효시간 설정 (다음 날 N시까지(0~6))</label>
+        <input type="number" id="cutoff-hour-input" min="0" max="6" placeholder="예: 2 (새벽 2시 59분까지 유효)">
+        <div class="template-info">
+            <p>인증글을 다음 날 N시 전까지 작성하면 이전 날짜의 인증으로 기록됩니다.</p>
+            <p id="cutoff-change-info" style="font-weight: bold; color: var(--error-color);"></p>
+        </div>
+        <button id="save-cutoff-btn" class="save-button" style="margin-top: 12px;">유효 시간 저장</button>
+    </div>
   </div>
 
   <script src="popup.js"></script>
